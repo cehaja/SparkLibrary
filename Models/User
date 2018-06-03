@@ -1,0 +1,110 @@
+<?php
+class User {
+    private $UserID;
+    private $FirstName;
+    private $LastName;
+    private $BirthDate;
+
+    public function getBirthDate()
+    {
+        return $this->BirthDate;
+    }
+    public function getFirstName()
+    {
+        return $this->FirstName;
+    }
+    public function getLastName()
+    {
+        return $this->LastName;
+    }
+    public function getUserID()
+    {
+        return $this->UserID;
+    }
+    public function setBirthDate($BirthDate)
+    {
+        $this->BirthDate = $BirthDate;
+    }
+    public function setFirstName($FirstName)
+    {
+        $this->FirstName = $FirstName;
+    }
+    public function setLastName($LastName)
+    {
+        $this->LastName = $LastName;
+    }
+    public function setUserID($UserID)
+    {
+        $this->UserID = $UserID;
+    }
+
+    public function __construct($firstName,$lastName,$birthDate)
+    {
+        $this->setBirthDate($birthDate);
+        $this->setFirstName($firstName);
+        $this->setLastName($lastName);
+    }
+
+    public function createUser($db)
+    {
+        $query = $db->prepare('insert into Users(firstName,lastName,birthDate) values (?,?,?)');
+        $query->bind_param('sss',$this->FirstName,$this->LastName,$this->BirthDate);
+        $query->execute();
+        if (mysqli_error($db)) {
+            echo mysqli_error($db);
+        } else {
+            header('Location: AllUsersForm.php');
+            exit;
+        }
+    }
+    public static function getAllUsers($db){
+        $users = array();
+        $query = $db->prepare('select userID,firstName,lastName,birthDate from Users');
+        $query->execute();
+        $result = $query->get_result();
+        while ($row = $result->fetch_assoc()) {
+            $users[$row["userID"]] = array("firstName"=>$row["firstName"],"lastName"=>$row["lastName"],"birthDate"=>$row["birthDate"]);
+        }
+        return $users;
+    }
+    public static function deleteUser($db,$userID){
+        $query = $db->prepare('delete from Users where userID=?');
+        $query->bind_param('s',$userID);
+        $query->execute();
+        if (mysqli_error($db)) {
+            echo mysqli_error($db);
+        }
+        else {
+            header('Location: AllUsersForm.php');
+            exit;
+        }
+    }
+    public static function getUser($db,$userID){
+        $query = $db->prepare('select userID,firstName,lastName,birthDate from Users where userID=?');
+        $query->bind_param('s',$userID);
+        $query->execute();
+        $result = $query->get_result();
+        while ($row = $result->fetch_assoc()) {
+            $user = new User($row["firstName"],$row["lastName"],$row["birthDate"]);
+            $user->setUserID($row["userID"]);
+        }
+        if (mysqli_error($db)){
+            echo mysqli_error($db);
+        }
+        else{
+            return $user;
+        }
+    }
+    public function updateUser($db){
+        $query = $db->prepare('update Users set firstName=?,lastName=?,birthDate=? where userID=?');
+        $query->bind_param('ssss',$this->FirstName,$this->LastName,$this->BirthDate,$this->UserID);
+        $query->execute();
+        if (mysqli_error($db)) {
+            echo mysqli_error($db);
+        }
+        else {
+            header('Location: AllUsersForm.php');
+            exit;
+        }
+    }
+}

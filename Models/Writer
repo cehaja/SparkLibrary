@@ -1,0 +1,109 @@
+<?php
+
+class Writer{
+    private $WriterID;
+    private $FirstName;
+    private $LastName;
+    private $BirthDate;
+
+    public function setWriterID($WriterID)
+    {
+        $this->WriterID = $WriterID;
+    }
+    public function setLastName($LastName)
+    {
+        $this->LastName = $LastName;
+    }
+    public function setFirstName($FirstName)
+    {
+        $this->FirstName = $FirstName;
+    }
+    public function getWriterID()
+    {
+        return $this->WriterID;
+    }
+    public function setBirthDate($BirthDate)
+    {
+        $this->BirthDate = $BirthDate;
+    }
+    public function getLastName()
+    {
+        return $this->LastName;
+    }
+    public function getFirstName()
+    {
+        return $this->FirstName;
+    }
+    public function getBirthDate()
+    {
+        return $this->BirthDate;
+    }
+    public function __construct($firstName,$lastName,$birthDate)
+    {
+        $this->setFirstName($firstName);
+        $this->setLastName($lastName);
+        $this->setBirthDate($birthDate);
+    }
+    public function createWriter($db)
+    {
+        $query = $db->prepare('insert into Writers(FirstName,LastName,BirthDate) values (?,?,?)');
+        $query->bind_param('sss',$this->FirstName,$this->LastName,$this->BirthDate);
+        $query->execute();
+        if (mysqli_error($db)) {
+            echo mysqli_error($db);
+        } else {
+            header('Location: AllWriters.php');
+            exit;
+        }
+    }
+    public static function getAllWriters($db){
+        $users = array();
+        $query = $db->prepare('select WriterID,FirstName,LastName,BirthDate from Writers');
+        $query->execute();
+        $result = $query->get_result();
+        while ($row = $result->fetch_assoc()) {
+            $users[$row["WriterID"]] = array("firstName"=>$row["FirstName"],"lastName"=>$row["LastName"],"birthDate"=>$row["BirthDate"]);
+        }
+        return $users;
+    }
+    public static function deleteWriter($db,$WriterID){
+        $query = $db->prepare('delete from Writers where WriterID=?');
+        $query->bind_param('s',$WriterID);
+        $query->execute();
+        if (mysqli_error($db)) {
+            echo mysqli_error($db);
+        }
+        else {
+            header('Location: AllWriters.php');
+            exit;
+        }
+    }
+    public static function getWriter($db,$WriterID){
+        $query = $db->prepare('select WriterID,FirstName,LastName,BirthDate from Writers where WriterID=?');
+        $query->bind_param('s',$WriterID);
+        $query->execute();
+        $result = $query->get_result();
+        while ($row = $result->fetch_assoc()) {
+            $writer = new Writer($row["FirstName"],$row["LastName"],$row["BirthDate"]);
+            $writer->setWriterID($row["WriterID"]);
+        }
+        if (mysqli_error($db)){
+            echo mysqli_error($db);
+        }
+        else{
+            return $writer;
+        }
+    }
+    public function updateWriter($db){
+        $query = $db->prepare('update Writers set FirstName=?,LastName=?,BirthDate=? where WriterID=?');
+        $query->bind_param('ssss',$this->FirstName,$this->LastName,$this->BirthDate,$this->WriterID);
+        $query->execute();
+        if (mysqli_error($db)) {
+            echo mysqli_error($db);
+        }
+        else {
+            header('Location: AllWriters.php');
+            exit;
+        }
+    }
+}

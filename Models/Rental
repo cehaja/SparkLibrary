@@ -1,0 +1,114 @@
+<?php
+
+class Rental{
+    private $RentalID;
+    private $UserID;
+    private $BookID;
+    private $RentDate;
+    private $ReturnDate;
+
+    public function getRentalID()
+    {
+        return $this->RentalID;
+    }
+    public function setRentalID($RentalID)
+    {
+        $this->RentalID = $RentalID;
+    }
+    public function getBookID()
+    {
+        return $this->BookID;
+    }
+    public function setBookID($BookID)
+    {
+        $this->BookID = $BookID;
+    }
+    public function setUserID($UserID)
+    {
+        $this->UserID = $UserID;
+    }
+    public function getUserID()
+    {
+        return $this->UserID;
+    }
+    public function getRentDate()
+    {
+        return $this->RentDate;
+    }
+    public function getReturnDate()
+    {
+        return $this->ReturnDate;
+    }
+    public function setRentDate($RentDate)
+    {
+        $this->RentDate = $RentDate;
+    }
+    public function setReturnDate($ReturnDate)
+    {
+        $this->ReturnDate = $ReturnDate;
+    }
+    public function __construct($userID,$bookID,$rentDate)
+    {
+        $this->setBookID($bookID);
+        $this->setUserID($userID);
+        $this->setRentDate($rentDate);
+    }
+    public function rentBook($db){
+        $query = $db->prepare('insert into Rental(BookID,UserID,RentDate) values (?,?,?)');
+        $query->bind_param('sss',$this->BookID,$this->UserID,$this->RentDate);
+        $query->execute();
+        if (mysqli_error($db)){
+            echo mysqli_error($db);
+        }
+        else{
+            header("Location: AllRents.php");
+        }
+    }
+    public function returnBook($db){
+        $returnDate=date("Y-m-d");
+        $this->setReturnDate($returnDate);
+        $query = $db->prepare('update Rental set ReturnDate=? where RentalID=?');
+        $query->bind_param('ss',$this->ReturnDate,$this->RentalID);
+        $query->execute();
+        if (mysqli_error($db)){
+            echo mysqli_error($db);
+        }
+        else{
+            header("Location: AllRents.php");
+        }
+    }
+    public static function getAllRents($db){
+        $rents = array();
+        $query = $db->prepare('select RentalID,BookID,UserID,RentDate,ReturnDate from Rental');
+        $query->execute();
+        $result = $query->get_result();
+        while ($row = $result->fetch_assoc()) {
+            $rents[$row["RentalID"]] = array("bookID"=>$row["BookID"],"userID"=>$row["UserID"],"rentDate"=>$row["RentDate"],"returnDate"=>$row["ReturnDate"]);
+        }
+        if (mysqli_error($db))
+        {
+            echo mysqli_error($db);
+        }
+        else{
+            return $rents;
+        }
+
+    }
+    public static function getRent($db,$rentID){
+        $query = $db->prepare('select RentalID,BookID,UserID,RentDate,ReturnDate from Rental where RentalID=?');
+        $query->bind_param('s',$rentID);
+        $query->execute();
+        $result = $query->get_result();
+        while ($row = $result->fetch_assoc()) {
+            $rents = new Rental($row["BookID"],$row["UserID"],$row["RentDate"],$row["ReturnDate"]);
+            $rents->setRentalID($rentID);
+        }
+        if (mysqli_error($db))
+        {
+            echo mysqli_error($db);
+        }
+        else{
+            return $rents;
+        }
+    }
+}

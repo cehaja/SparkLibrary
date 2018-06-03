@@ -1,0 +1,110 @@
+<?php
+
+class Book{
+    private $BookID;
+    private $ReleaseYear;
+    private $Title;
+    private $WriterID;
+
+    public function setBookID($BookID)
+    {
+        $this->BookID = $BookID;
+    }
+    public function getBookID()
+    {
+        return $this->BookID;
+    }
+    public function getReleaseYear()
+    {
+        return $this->ReleaseYear;
+    }
+    public function getTitle()
+    {
+        return $this->Title;
+    }
+    public function getWriterID()
+    {
+        return $this->WriterID;
+    }
+    public function setReleaseYear($ReleaseYear)
+    {
+        $this->ReleaseYear = $ReleaseYear;
+    }
+    public function setTitle($Title)
+    {
+        $this->Title = $Title;
+    }
+    public function setWriterID($WriterID)
+    {
+        $this->WriterID = $WriterID;
+    }
+
+    public function __construct($title,$releaseYear,$writerID)
+    {
+        $this->setReleaseYear($releaseYear);
+        $this->setTitle($title);
+        $this->setWriterID($writerID);
+    }
+    public function createBook($db)
+    {
+        $query = $db->prepare('insert into Books(Title,ReleaseYear,WriterID) values (?,?,?)');
+        $query->bind_param('sss',$this->Title,$this->ReleaseYear,$this->WriterID);
+        $query->execute();
+        if (mysqli_error($db)) {
+            echo mysqli_error($db);
+        } else {
+            header('Location: AllBooks.php');
+            exit;
+        }
+    }
+    public static function getAllBooks($db){
+        $books = array();
+        $query = $db->prepare('select BookID,Title,ReleaseYear,WriterID from Books');
+        $query->execute();
+        $result = $query->get_result();
+        while ($row = $result->fetch_assoc()) {
+            $books[$row["BookID"]] = array("title"=>$row["Title"],"releaseYear"=>$row["ReleaseYear"],"writerID"=>$row["WriterID"]);
+        }
+        return $books;
+    }
+    public static function deleteBook($db,$bookID){
+        $query = $db->prepare('delete from Books where BookID=?');
+        $query->bind_param('s',$bookID);
+        $query->execute();
+        if (mysqli_error($db)) {
+            echo mysqli_error($db);
+        }
+        else {
+            header('Location: AllBooks.php');
+            exit;
+        }
+    }
+    public static function getBook($db,$bookID){
+        $query = $db->prepare('select BookID,Title,ReleaseYear,WriterID from Books where BookID=?');
+        $query->bind_param('s',$bookID);
+        $query->execute();
+        $result = $query->get_result();
+        while ($row = $result->fetch_assoc()) {
+            $book = new Book($row["Title"],$row["ReleaseYear"],$row["WriterID"]);
+            $book->setBookID($row["BookID"]);
+        }
+        if (mysqli_error($db)){
+            echo mysqli_error($db);
+        }
+        else{
+            return $book;
+        }
+    }
+    public function updateBook($db){
+        $query = $db->prepare('update Books set Title=?,ReleaseYear=?,WriterID=? where BookID=?');
+        $query->bind_param('ssss',$this->Title,$this->ReleaseYear,$this->WriterID,$this->BookID);
+        $query->execute();
+        if (mysqli_error($db)) {
+            echo mysqli_error($db);
+        }
+        else {
+            header('Location: AllBooks.php');
+            exit;
+        }
+    }
+}
